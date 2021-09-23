@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>A Meaningful Page Title</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+      </head>
+
+      <style>
+          #start {
+            display: block;
+          }
+          #run {
+              display: none;
+          }
+          li{
+              display: inline;;
+          }
+          #no_string_message {
+              display:none;
+              color: red;
+          }
+      </style>
+     
+<body>
+
+
+      
+
+
+
+
+<h1>Fretboard Notes Trainer</h1>
+<p>The trainer will ask you to play a note. Play it, then listen to see if you got it right.</p>
+
+<div id="start">
+
+<form id="play_form">
+
+    <fieldset><legend>Set thinking time:</legend>
+
+    <select id="countdown">
+        <option value="1000"selected>1</option>
+        <option value="3000">3</option>
+        <option value="5000">5</option>
+        <option value="10000">10</option>
+        <option value="15000">15</option>
+        <option value="20000">20</option>   
+    </select>
+
+    <label for="countdown">secs</label>
+
+    </fieldset>
+    
+
+    <fieldset><legend>Choose strings:</legend>
+        <span id="no_string_message">PLEASE CHOOSE A STRING!</span>
+        <ol>
+        <li><input type="checkbox" id="6" name="string" value="0" checked> <label for="6">E (low)</label></li>
+        <li><input type="checkbox" id="5" name="string" value="1"> <label for="5">A</label></li>
+        <li><input type="checkbox" id="4" name="string" value="2"> <label for="4">D</label></li>
+        <li><input type="checkbox" id="3" name="string" value="3"> <label for="3">G</label></li>
+        <li><input type="checkbox" id="2" name="string" value="4"> <label for="2">B</label></li>
+        <li><input type="checkbox" id="1" name="string" value="5"> <label for="1">E (high)</label></li>
+    </ol>
+
+    </fieldset>
+
+    <fieldset><legend>Choose frets:</legend>
+
+        <label for="frets_low">From:</label>
+
+<select id="frets_low">
+    <option>0</option>
+    <option>1</option>
+    <option>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>5</option>
+    <option>6</option>
+    <option>7</option>
+    <option>8</option>
+    <option>9</option>
+    <option>10</option>
+    <option>11</option>
+    <option>12</option>
+    <option>13</option>
+    <option>14</option>
+    <option>15</option>
+    <option>16</option>
+    <option>17</option>
+    <option>18</option>
+    <option>19</option>
+    <option>20</option>
+    <option>21</option>
+    <option>22</option>
+</select>
+
+<label for="frets_high">To:</label>
+
+<select id="frets_high">           
+    <option>1</option>
+    <option>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>5</option>
+    <option>6</option>
+    <option>7</option>
+    <option>8</option>
+    <option>9</option>
+    <option>10</option>
+    <option>11</option>
+    <option>12</option>
+    <option>13</option>
+    <option>14</option>
+    <option>15</option>
+    <option>16</option>
+    <option>17</option>
+    <option>18</option>
+    <option>19</option>
+    <option>20</option>
+    <option>21</option>
+    <option>22</option>
+</select>
+
+    </fieldset>
+
+    <input type="submit" id="go" value="Go!">
+
+    <input type="reset">
+
+</form>
+
+</div>
+
+<div id="run">
+
+    <p><span id="the_note"></span></p>
+
+    <p><span id="countdown_display"></span></p>   
+
+    <button id="play_pause">||</button> 
+
+</div>
+
+<!-- <audio id="myAudio" controls>
+    <source src="notes/string-6/E2.mp3"type="audio/mpeg">    
+    Your browser does not support the audio element.
+</audio>
+<audio id="myAudio" controls>   
+    <source src="notes/string-6/F2.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio> -->
+
+<script>
+    //constants and variables:
+
+    //dollar function (getElementById shortcut):
+    let $ = function( id ) { return document.getElementById( id ); };
+    //nodelist of string choice checkboxes:
+    const STRING_CHECKBOX = document.querySelectorAll("[name='string']");  
+    //reference to the trainer form:
+    const PLAY_FORM = $("play_form");
+    //reference to the quiz screen div:
+    const START_DIV = $("start");
+    //reference to the question/countdown and play/pause button screen div:
+    const RUN_DIV = $("run");
+    //reference to the thinking time countdown dropdown:
+    const COUNTDOWN = $("countdown");
+   //reference to countdown display span:
+    const COUNTDOWN_DISPLAY = $("countdown_display");
+    //reference to quiz note-to-play display span:
+    const THE_NOTE = $("the_note");
+    //reference to play/pause button:    
+    const PLAY_PAUSE = $("play_pause");
+    //reference no string chosen message (appears after Choose strings heading) span:
+    const NO_STRING_MESSAGE = $("no_string_message");
+
+    //an array of note objects of all notes on the Strat. Each object consists of:
+    //note:programmatic name of the note
+    //name:display name of note, copied from: https://en.wikipedia.org/wiki/Piano_key_frequencies - these have special character representations of sharps and flats:
+    //blah
+    
+    const NOTES = [
+        {note:"E2", name:"E"}, 
+        {note:"F2", name:"F"}, 
+        {note:"F#2", name:"F♯/G♭"}, 
+        {note:"G2", name:"G"}, 
+        {note:"G#2", name:"G♯/A♭"}, 
+        {note:"A2", name:"A"}, 
+        {note:"A#2", name:"A♯/B♭"}, 
+        {note:"B2", name:"B"}, 
+        {note:"C3", name:"C"}, 
+        {note:"C#3", name:"C♯/D♭"}, 
+        {note:"D3", name:"D"}, 
+        {note:"D#3", name:"D♯/E♭"}, 
+        {note:"E3", name:"E"}, 
+        {note:"F3", name:"F"}, 
+        {note:"F#3", name:"F♯/G♭"}, 
+        {note:"G3", name:"G"}, 
+        {note:"G#3", name:"G♯/A♭"}, 
+        {note:"A3", name:"A"}, 
+        {note:"A#3", name:"A♯/B♭"}, 
+        {note:"B3", name:"B"}, 
+        {note:"C4", name:"C"}, 
+        {note:"C#4", name:"C♯/D♭"}, 
+        {note:"D4", name:"D"}, 
+        {note:"D#4", name:"D♯/E♭"}, 
+        {note:"E4", name:"E"}, 
+        {note:"F4", name:"F"}, 
+        {note:"F#4", name:"F♯/G♭"}, 
+        {note:"G4", name:"G"}, 
+        {note:"G#4", name:"G♯/A♭"}, 
+        {note:"A4", name:"A"}, 
+        {note:"A#4", name:"A♯/B♭"}, 
+        {note:"B4", name:"B"}, 
+        {note:"C5", name:"C"}, 
+        {note:"C#5", name:"C♯/D♭"}, 
+        {note:"D5", name:"D"}, 
+        {note:"D#5", name:"D♯/E♭"}, 
+        {note:"E5", name:"E"}, 
+        {note:"F5", name:"F"}, 
+        {note:"F#5", name:"F♯/G♭"}, 
+        {note:"G5", name:"G"}, 
+        {note:"G#5", name:"G♯/A♭"}, 
+        {note:"A5", name:"A"}, 
+        {note:"A#5", name:"A♯/B♭"}, 
+        {note:"B5", name:"B"}, 
+        {note:"C6", name:"C"}, 
+        {note:"C#6", name:"C♯/D♭"}, 
+        {note:"D6", name:"D"}];
+
+    //arrays of tunings. e.g. EADGBE is standard tuning with string 6 = E2...to string 1 = E4
+    const EADGBE = ["E2", "A2", "D3", "G3", "B3", "E4"]; //only this currently used
+    const DADGAD = ["D2", "A2", "D3", "G3", "A3", "D4"];
+
+
+    const INT_NUM_STRINGS = 6; // 6 string guitar
+    const INT_OCTAVE_DIVIDER_FRET = 12; // 6 string guitar
+
+    
+    let int_quiz_index = 0;
+    
+   // const THE_NOTE = $
+
+   for (let i=0; i < NOTES.length; i ++ ) { 
+
+       
+      // window["audio_ob_" + i ] = new Audio("notes/string-6/" + NOTES[i].note + ".mp3");
+      // console.log(window["audio_ob_" + i ]);
+
+   }
+
+   E2 = new Audio("notes/string-6/E2.mp3");
+   F2 = new Audio("notes/string-6/F2.mp3");
+
+   //const E2 = document.getElementById("myAudio"); 
+
+    
+    let last_string_touched = "";
+    let string_checked = false;
+    let int_countdown_index = 0;
+    let interval_ref = "";
+    let timeout_ref = "";
+    let quiz_in_progress = false;
+    let play_state = "stopped";
+
+
+//alert(STRING_CHECKBOX.length);
+
+// for (let i = 0; i < STRING_CHECKBOX.length; i++) {
+//     STRING_CHECKBOX[i].addEventListener('click', event => {
+    
+       
+//     //console.log(item.id);
+//    checkStrings(event);
+    
+   
+
+//     })
+// } 
+
+// STRING_CHECKBOX.forEach(item => {
+//   item.addEventListener('click', event => {
+    
+       
+//         //console.log(item.id);
+//        checkStrings(item);
+        
+       
+    
+//     })
+// })
+
+PLAY_FORM.addEventListener('submit', event => {
+    
+       //alert(1);
+    //console.log(countdown.value);
+    //console.log(countdown.value);
+    //console.log(getVals(STRING_CHECKBOX));
+    //console.log(getVals(STRING_CHECKBOX));
+
+    //console.log(frets_low.value);
+    //console.log(frets_high.value);
+   
+   //checkStrings(item);
+
+   //checkStrings(item)
+   
+   if (stringChosen()) {       
+        start();
+   } 
+
+    //start();
+    
+   event.preventDefault();
+
+})
+
+PLAY_PAUSE.addEventListener('click', event => {    
+ 
+    playPause();
+
+})
+
+function getVals(Nodes){
+
+    let arr_vals = [];
+
+    Nodes.forEach(item => {
+        if (item.checked){
+            arr_vals[arr_vals.length] = parseInt(item.value);
+        }
+        
+    })
+
+    return arr_vals;
+}
+
+function stringChosen() {
+    
+    for (let i = 0; i < STRING_CHECKBOX.length; i++) {
+        
+        if (STRING_CHECKBOX[i].checked){ 
+
+            NO_STRING_MESSAGE.style.display = "none";            
+            return true;           
+        }        
+    }  
+    
+    NO_STRING_MESSAGE.style.display = "inline";            
+    return false;  
+}
+
+function checkStrings(item){
+    
+    last_string_touched = item;    
+    
+    for (let i = 0; i < STRING_CHECKBOX.length; i++) {
+        if (STRING_CHECKBOX[i].checked){
+            string_checked = true;
+           break;
+        }else{
+            string_checked = false;
+        }        
+
+    }    
+
+    if (string_checked != true){        
+        last_string_touched.checked = true;
+    //    for (let i = 0; i < STRING_CHECKBOX.length; i++) {        
+    //     STRING_CHECKBOX[i].checked = true;
+    //    }
+    }   
+} 
+
+function start(){
+    //console.log(countdown.value);
+    //console.log(START_DIV.visibility);
+    
+    clearInterval(interval_ref);  
+    clearTimeout(timeout_ref);
+    //PLAY_AGAIN.style.display = "none";
+    COUNTDOWN_DISPLAY.innerText = "";
+    
+
+    getNotes(EADGBE, getVals(STRING_CHECKBOX), parseInt(frets_low.value), parseInt(frets_high.value));
+    
+    int_quiz_index = 0;  
+    RUN_DIV.style.display = "block";
+    //console.log(THE_NOTE);   
+
+    
+
+    runQuiz();
+    quiz_in_progress = true;
+    PLAY_PAUSE.innerText = "||";
+    play_state = "playing";
+
+    //THE_NOTE.innerText = 1;
+    
+}
+
+
+function runQuiz() {
+
+    
+
+    //if (int_quiz_index < arr_quiz_notes.length){
+
+        //console.log("int_quiz_index_rq",int_quiz_index);
+
+        displayQuiz();
+
+        //number secs to countdown before next q
+        int_countdown_index = COUNTDOWN.value / 1000;
+
+        //console.log("int_countdown_index",int_countdown_index);
+
+        interval_ref = setInterval(doCountdown, 1000);
+
+   // }
+
+    
+
+}
+
+function displayQuiz(){
+
+    //console.log(int_quiz_index);
+
+    THE_NOTE.style.color = "black";
+
+        THE_NOTE.innerText = "play " + arr_quiz_notes[int_quiz_index].position + " " + arr_quiz_notes[int_quiz_index].name + " " + "on string " + arr_quiz_notes[int_quiz_index].string;
+
+}
+
+function doCountdown() {
+
+    //console.log("int_countdown_index_dc",int_countdown_index);
+    
+    if (int_countdown_index > 0) {
+
+        COUNTDOWN_DISPLAY.innerText = int_countdown_index;
+        int_countdown_index --;
+
+    } else {
+
+        clearInterval(interval_ref);
+        COUNTDOWN_DISPLAY.innerText = "";
+        showAnswer();
+        //console.log("int_quiz_index_dc",int_quiz_index);
+        int_quiz_index ++;
+    }
+}
+
+function showAnswer() {
+
+    //playNote();
+
+    //E2.play();
+
+    //arr_quiz_notes[int_quiz_index].note.play();
+
+    var this_note = arr_quiz_notes[int_quiz_index];
+
+    //window[this_note.note].play();
+
+    this_note.audio.play();
+
+    //console.log(typeof str,str);
+
+    THE_NOTE.style.color = "red";
+
+    THE_NOTE.innerText = this_note.position + " " + this_note.name + " (" + this_note.note + ") on string " + this_note.string + " = " + this_note.fret;
+
+    //console.log("int_quiz_index_sa",int_quiz_index);    
+
+    if (int_quiz_index + 1 < arr_quiz_notes.length){
+        // allow time for answer message and note before next q
+        timeout_ref = setTimeout(runQuiz, 3500);
+   }  else {
+       end();        
+    }
+
+}
+
+function end(){
+    COUNTDOWN_DISPLAY.innerText = "End of Quiz";
+    //PLAY_AGAIN.style.display = "block";
+    clearTimeout(timeout_ref);
+    PLAY_PAUSE.innerText = ">";
+    quiz_in_progress = false;
+    play_state = "stopped";
+    //clearInterval(interval_ref);
+}
+
+function playPause() {
+
+    //console.log(play_state);
+
+    if (play_state == "playing") {
+
+        clearInterval(interval_ref);
+        clearTimeout(timeout_ref);
+        PLAY_PAUSE.innerText = ">";        
+        play_state = "stopped";
+
+    } else {
+
+        //console.log("quiz_in_progress",quiz_in_progress);
+
+        if (quiz_in_progress) {
+
+            if (int_countdown_index <= 0){
+
+                timeout_ref = setTimeout(runQuiz, 300);
+
+            }else{
+
+                interval_ref = setInterval(doCountdown, 1000);
+                
+            }
+
+//console.log("int_countdown_index",int_countdown_index);
+
+            
+        } else {
+            start();
+        }
+
+        play_state = "playing";
+        PLAY_PAUSE.innerText = "||";
+    }
+    
+}
+
+       
+
+function getNotes(TUNING = EADGBE, arr_strings = [0, 1, 2, 3, 4, 5], int_fret_start = 0, int_fret_end = 22){
+
+    // console.log("tuning=",TUNING);
+    console.log("arr_strings",arr_strings);
+    // console.log(int_fret_start);
+    // console.log(int_fret_end);
+    //console.log();
+
+    //swap fret start/end if start is higher than end
+    (int_fret_start  > int_fret_end ) ? [int_fret_start, int_fret_end] = [int_fret_end, int_fret_start] : "" ; 
+
+    arr_quiz_notes = [];
+
+    for (let i = 0; i < arr_strings.length; i++) {                
+        
+        for (let j=0; j < NOTES.length; j ++ ) {                    
+
+            if (TUNING[arr_strings[i]] == NOTES[j].note){
+
+                let this_strings_notes = [];
+                                        
+                this_strings_notes = NOTES.slice(j + int_fret_start, j + (int_fret_end + 1));
+
+                //console.log("this_strings_notes", this_strings_notes);
+                
+
+                for (let k = 0; k < this_strings_notes.length; k++){
+                    //console.log("in this loop",k);
+
+                    this_strings_notes[k] = Object.assign({}, this_strings_notes[k]);
+
+
+
+                    this_strings_notes[k]["audio"] = new Audio("notes/string-6/" + encodeURIComponent(this_strings_notes[k].note) + ".mp3");
+                    
+
+                    if (k + int_fret_start < INT_OCTAVE_DIVIDER_FRET) {
+                        this_strings_notes[k]["position"] = "low"; 
+                    } else {
+                        this_strings_notes[k]["position"] = "high";
+                    }
+                    if (k + int_fret_start == 0) {
+                        this_strings_notes[k]["fret"] = "open string";  
+                    } else {
+                        this_strings_notes[k]["fret"] = "fret " + (k + int_fret_start);
+                    }
+
+                    this_strings_notes[k]["string"] = INT_NUM_STRINGS - arr_strings[i];
+                }
+                //console.log("this_strings_notes 2", JSON.stringify(this_strings_notes));
+                //console.log("arr_quiz_notes",arr_quiz_notes); 
+                //all_notes =  arr_quiz_notes.concat(this_strings_notes);        
+                arr_quiz_notes = arr_quiz_notes.concat(this_strings_notes);     
+                //console.log("arr_quiz_notes2",JSON.stringify(arr_quiz_notes));   
+                //console.log("all notes",all_notes);               
+                break;                                                
+            }
+        }
+    } 
+    
+    //console.log("notes=",all_notes);
+
+    arr_quiz_notes = randomiseArray(arr_quiz_notes);
+
+    console.log("random notes=",arr_quiz_notes);
+}
+
+function randomiseArray(arr){
+
+    for (let i = arr.length -1; i > 0; i--) { 
+        j = Math.floor(Math.random() * i);        
+        k = arr[i] 
+        arr[i] = arr[j] 
+        arr[j] = k 
+    } 
+
+    return arr;
+
+}
+
+       
+
+       
+
+</script>
+
+</body>
+</html> 
